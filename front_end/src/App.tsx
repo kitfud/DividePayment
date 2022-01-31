@@ -6,7 +6,7 @@ import Main from './components/Main';
 
 
 const config: Config = {
-  supportedChains: [ChainId.Rinkeby, ChainId.Kovan]
+  supportedChains: [ChainId.Rinkeby]
 }
 
 function App() {
@@ -14,9 +14,6 @@ function App() {
     <DAppProvider config={config}>
       <Header />
       <Container maxWidth="md">
-        <div >
-          Hello
-        </div>
         <Main />
       </Container>
 
