@@ -34,7 +34,7 @@ const Main = () => {
     ]
 
     return (
-        <YourWallet supportedTokens={supportedTokens}></YourWallet>
+        <YourWallet supportedTokens={supportedTokens} contractAddress={dividePaymentAddress}></YourWallet>
 
 
     )
