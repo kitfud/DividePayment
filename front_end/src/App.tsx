@@ -16,7 +16,6 @@ function App() {
       <Container maxWidth="md">
         <Main />
       </Container>
-
     </DAppProvider>
 
   );

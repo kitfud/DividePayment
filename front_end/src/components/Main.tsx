@@ -8,6 +8,7 @@ import brownieConfig from "../brownie-config.json"
 import weth from "../eth.png"
 import YourWallet from "./yourWallet/YourWallet"
 
+
 export type Token = {
     image: string
     address: string
@@ -34,6 +35,8 @@ const Main = () => {
 
     return (
         <YourWallet supportedTokens={supportedTokens}></YourWallet>
+
+
     )
 
 };
