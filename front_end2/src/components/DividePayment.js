@@ -12,6 +12,9 @@ const DividePaymentApp = () => {
     const [testFunctionVal, setCurrentContractVal] = useState(null);
     const [contractBalance, setContractBalance] = useState(null);
     const [walletBalance, setWalletBalance] = useState(null);
+    const [paygroup, setPayGroup] = useState(null);
+    const [inpaygroup, setInPayGroup] = useState(null);
+    const [isAdmin, setIsAdmin] = useState(null);
 
     const [provider, setProvider] = useState(null);
     const [signer, setSigner] = useState(null);
@@ -19,14 +22,6 @@ const DividePaymentApp = () => {
 
     const { abi } = DividePayment
     const dividePaymentAddress = "0x5b4AaAf80b216314A7CD5ee078dBE60B16e50F53"
-    // const { chainId } = provider.getNetwork()
-    // console.log(chainId)
-
-    // let tempProvider = new ethers.providers.Web3Provider(window.ethereum);
-    // setProvider(tempProvider);
-
-
-
 
 
     const connectWalletHandler = () => {
@@ -34,9 +29,9 @@ const DividePaymentApp = () => {
 
             window.ethereum.request({ method: 'eth_requestAccounts' })
                 .then(result => {
-                    accountChangedHandler(result[0]);
-                    setConnButtonText('Wallet Connected');
 
+                    accountChangedHandler(result[0]);
+                    setConnButtonText('Wallet Connected/Click To Refresh Balance');
 
 
 
@@ -83,7 +78,7 @@ const DividePaymentApp = () => {
 
         let tempContract = new ethers.Contract(dividePaymentAddress, abi, tempSigner);
         setContract(tempContract);
-        // console.log(contract)
+
     }
 
 
@@ -104,6 +99,45 @@ const DividePaymentApp = () => {
 
     }
 
+    const getPayGroup = async () => {
+        let paygroupGet = await contract.getPayGroup()
+        setPayGroup(paygroupGet)
+
+    }
+
+    const checkIfAdmin = () => {
+        if (contract != null) {
+            contract.owner().then((res) => {
+
+                console.log(res.toUpperCase())
+                console.log(defaultAccount.toUpperCase())
+
+                if (res.toUpperCase() == defaultAccount.toUpperCase()) {
+                    setIsAdmin(true)
+                }
+                else {
+                    setIsAdmin(false)
+                }
+
+            })
+        }
+    }
+
+
+
+    const checkIfInPaygroup = () => {
+
+        let currentAccount = defaultAccount.toUpperCase()
+        for (let i = 0; i < paygroup.length; i++) {
+            if (paygroup[i].toUpperCase() == currentAccount) {
+                setInPayGroup(true)
+            }
+        }
+
+
+
+    }
+
     const setDeposit = (event) => {
         event.preventDefault();
         const amountwei = ethers.utils.parseEther(event.target.setText.value)
@@ -112,13 +146,48 @@ const DividePaymentApp = () => {
         signer.sendTransaction({ to: dividePaymentAddress, value: amountwei }).then((txObj) => {
             console.log('txHash', txObj.hash)
         })
-
     }
 
+    const withdrawOwed = (event) => {
+        event.preventDefault()
+        const tx = contract.releaseOwedPayment()
+        console.log(tx)
+    }
+
+    const AdminDisbursePayments = (event) => {
+        event.preventDefault()
+        contract.AdminReleaseAllPayments().then((res) => {
+            console.log(res)
+        })
+    }
 
     useEffect(() => {
         getWalletBalance(provider)
+
     }, [provider])
+
+    useEffect(() => {
+        if (contract !== null) {
+            getPayGroup()
+            checkIfAdmin()
+            console.log(isAdmin)
+            getBalance()
+            // contract.owner().then((res) => {
+            //     console.log(res)
+            // })
+
+        }
+    }, [contract])
+
+    useEffect(() => {
+        if (paygroup !== null) {
+
+            console.log(paygroup)
+
+            checkIfInPaygroup()
+        }
+    }, [paygroup])
+
 
 
     return (<div>
@@ -126,23 +195,36 @@ const DividePaymentApp = () => {
         <div>
             <h3>Address: {defaultAccount}</h3>
             <h3>Wallet Balance: {walletBalance}</h3>
+            <h3>Contract Balance: {contractBalance}</h3>
         </div>
-        {/* <div>
-            <button onClick={getTestFunction} style={{ marginTop: '5em' }}> Get Current Contract Value </button>
-            {testFunctionVal}
-        </div> */}
 
         <div>
-            <button onClick={getBalance} style={{ marginTop: '5em' }}> DividePayment Contract Balance</button>
-            {contractBalance}
+            {
+                inpaygroup ? (
+                    <button onClick={withdrawOwed}>Withdraw Payment Into Account</button>
+                ) : (
+                    null
+                )
+            }
         </div>
 
+        <div>
+            {
+                isAdmin ? (
+                    <button onClick={AdminDisbursePayments}>Disburse Payments to Payees</button>
+                ) : (
+                    null
+                )
+            }
+        </div>
+
+        <h3>MAKE A DEPOSIT:</h3>
         <form onSubmit={setDeposit}>
             <input id="setText" type="text" />
             <button type={"submit"}> Send ETH to DividePayment_Contract </button>
         </form>
 
-        {errorMessage}
+
     </div>)
 
 };
