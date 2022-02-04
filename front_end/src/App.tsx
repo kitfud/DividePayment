@@ -6,7 +6,7 @@ import Main from './components/Main';
 
 
 const config: Config = {
-  supportedChains: [ChainId.Rinkeby]
+  supportedChains: [ChainId.Rinkeby, ChainId.Kovan]
 }
 
 function App() {

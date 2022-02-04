@@ -12,7 +12,7 @@ networks:
   ganache:
     verify: False
   rinkeby:
-    verify: Yes
+    verify: True
   kovan:
     verify: True
 

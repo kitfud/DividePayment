@@ -39,6 +39,10 @@ contract DividePayment is PaymentSplitter {
         return address(this).balance;
     }
 
+    function testFunction() public view returns (uint256) {
+        return 99;
+    }
+
     // Function to deposit Ether into this contract.
     function deposit() public payable {}
 
