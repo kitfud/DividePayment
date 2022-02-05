@@ -9,7 +9,6 @@ const DividePaymentApp = () => {
     const [defaultAccount, setDefaultAccount] = useState(null);
     const [connButtonText, setConnButtonText] = useState('Connect Wallet');
 
-    const [testFunctionVal, setCurrentContractVal] = useState(null);
     const [contractBalance, setContractBalance] = useState(null);
     const [walletBalance, setWalletBalance] = useState(null);
     const [paygroup, setPayGroup] = useState(null);
@@ -25,10 +24,13 @@ const DividePaymentApp = () => {
 
 
     const connectWalletHandler = () => {
+
         if (window.ethereum && window.ethereum.isMetaMask) {
+
 
             window.ethereum.request({ method: 'eth_requestAccounts' })
                 .then(result => {
+
 
                     accountChangedHandler(result[0]);
                     setConnButtonText('Wallet Connected/Click To Refresh Balance');
@@ -46,21 +48,19 @@ const DividePaymentApp = () => {
             setErrorMessage('Please install MetaMask browser extension to interact');
         }
     }
-    const accountChangedHandler = (newAccount) => {
-        setDefaultAccount(newAccount);
-        updateEthers();
 
-    }
 
     const chainChangedHandler = () => {
         // reload the page to avoid any errors with chain change mid use of application
+
         window.location.reload();
     }
 
-    const getWalletBalance = async (provider) => {
+    const getWalletBalance = async (providerIn) => {
         // Look up the balance
-        if (provider !== null) {
-            let balance = await provider.getBalance(defaultAccount);
+        if (typeof providerIn === 'object' && providerIn !== null) {
+            console.log(providerIn)
+            let balance = await providerIn.getBalance(defaultAccount);
             setWalletBalance(ethers.utils.formatEther(balance))
         }
 
@@ -69,29 +69,39 @@ const DividePaymentApp = () => {
     const updateEthers = () => {
         let tempProvider = new ethers.providers.Web3Provider(window.ethereum);
         setProvider(tempProvider);
-        // console.log(provider)
-
 
         let tempSigner = tempProvider.getSigner();
         setSigner(tempSigner);
         // console.log(signer)
 
-        let tempContract = new ethers.Contract(dividePaymentAddress, abi, tempSigner);
+        let tempContract = new ethers.Contract(dividePaymentAddress, abi, tempProvider);
         setContract(tempContract);
+
+
 
     }
 
+    const accountChangedHandler = (newAccount) => {
+        setProvider(null)
+        setInPayGroup(null)
+        setIsAdmin(null)
+        setSigner(null)
+        setContract(null)
 
+        console.log("new account " + newAccount)
+        if (newAccount !== null) {
+            setDefaultAccount(newAccount);
+            updateEthers();
+        }
+
+
+
+    }
     // listen for account changes
     window.ethereum.on('accountsChanged', accountChangedHandler);
 
     window.ethereum.on('chainChanged', chainChangedHandler);
 
-
-    const getTestFunction = async () => {
-        let val = await contract.testFunction()
-        setCurrentContractVal(val.toString());
-    }
 
     const getBalance = async () => {
         let balance = await contract.getBalance()
@@ -99,20 +109,20 @@ const DividePaymentApp = () => {
 
     }
 
-    const getPayGroup = async () => {
+    const getContractPayGroup = async () => {
         let paygroupGet = await contract.getPayGroup()
         setPayGroup(paygroupGet)
 
     }
 
     const checkIfAdmin = () => {
-        if (contract != null) {
+        if (contract !== null && defaultAccount !== null | defaultAccount) {
             contract.owner().then((res) => {
 
-                console.log(res.toUpperCase())
-                console.log(defaultAccount.toUpperCase())
+                //
+                let acc = defaultAccount.toString()
 
-                if (res.toUpperCase() == defaultAccount.toUpperCase()) {
+                if (res.toUpperCase() === acc.toUpperCase()) {
                     setIsAdmin(true)
                 }
                 else {
@@ -126,15 +136,18 @@ const DividePaymentApp = () => {
 
 
     const checkIfInPaygroup = () => {
+        console.log("default account " + defaultAccount)
+        if (defaultAccount !== null) {
+            let current = defaultAccount.toString()
+            let currentAccount = current.toUpperCase()
 
-        let currentAccount = defaultAccount.toUpperCase()
-        for (let i = 0; i < paygroup.length; i++) {
-            if (paygroup[i].toUpperCase() == currentAccount) {
-                setInPayGroup(true)
+            for (let i = 0; i < paygroup.length; i++) {
+                if (paygroup[i].toUpperCase() == currentAccount) {
+                    setInPayGroup(true)
+                }
             }
+
         }
-
-
 
     }
 
@@ -162,31 +175,23 @@ const DividePaymentApp = () => {
     }
 
     useEffect(() => {
-        getWalletBalance(provider)
-
-    }, [provider])
-
-    useEffect(() => {
-        if (contract !== null) {
-            getPayGroup()
+        if (contract) {
+            getContractPayGroup()
             checkIfAdmin()
-            console.log(isAdmin)
             getBalance()
-            // contract.owner().then((res) => {
-            //     console.log(res)
-            // })
+            getWalletBalance(provider)
 
         }
     }, [contract])
 
     useEffect(() => {
-        if (paygroup !== null) {
-
-            console.log(paygroup)
-
+        if (paygroup) {
             checkIfInPaygroup()
         }
+
     }, [paygroup])
+
+
 
 
 
@@ -203,7 +208,7 @@ const DividePaymentApp = () => {
                 inpaygroup ? (
                     <button onClick={withdrawOwed}>Withdraw Payment Into Account</button>
                 ) : (
-                    null
+                    <span></span>
                 )
             }
         </div>
@@ -213,7 +218,7 @@ const DividePaymentApp = () => {
                 isAdmin ? (
                     <button onClick={AdminDisbursePayments}>Disburse Payments to Payees</button>
                 ) : (
-                    null
+                    <span></span>
                 )
             }
         </div>
