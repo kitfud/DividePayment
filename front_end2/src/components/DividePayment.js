@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { ethers, constants, utils } from 'ethers'
 import DividePayment from "../chain-info/contracts/DividePayment.json"
 import networkMapping from "../chain-info/deployments/map.json"
-import { Button, Input, CircularProgress, Box } from "@mui/material"
+import { Button, Input, CircularProgress, Box, TextField, Snackbar, Alert, Link } from "@mui/material"
+import { ThemeProvider, createTheme } from '@mui/system';
+import { green, purple } from '@mui/material/colors';
 
 const DividePaymentApp = () => {
     const [errorMessage, setErrorMessage] = useState(null);
@@ -24,10 +26,14 @@ const DividePaymentApp = () => {
     const [processing, setProcessing] = useState(false)
 
     const [txhash, setTxHash] = useState(null)
+    const [transactionPosted, setTransactionPosted] = useState(false)
 
     const { abi } = DividePayment
     const dividePaymentAddress = "0x5b4AaAf80b216314A7CD5ee078dBE60B16e50F53"
 
+    const handleCloseSnack = () => {
+        setTransactionPosted(false)
+    }
 
     const connectWalletHandler = () => {
         if (window.ethereum && window.ethereum.isMetaMask) {
@@ -81,7 +87,7 @@ const DividePaymentApp = () => {
 
     const getWalletBalance = async (provider) => {
         // Look up the balance
-        if (provider !== null) {
+        if (provider !== null && !processing) {
             let balance = await provider.getBalance(defaultAccount);
             setWalletBalance(ethers.utils.formatEther(balance))
         }
@@ -181,6 +187,7 @@ const DividePaymentApp = () => {
 
                 getBalance()
                 getWalletBalance(provider)
+                setTransactionPosted(true)
 
             }
         }
@@ -208,6 +215,8 @@ const DividePaymentApp = () => {
             let hashin = txObj.hash
             setTxHash(hashin.toString())
             isTransactionMined(hashin.toString())
+            //set the text feild back to 0
+
 
         }).catch(error =>
             setProcessing(false))
@@ -217,10 +226,12 @@ const DividePaymentApp = () => {
             console.log(tx)
         }
 
+        if (document.getElementById("setText") !== null) {
+            document.getElementById("setText").value = "";
+        }
 
 
 
-        document.getElementById("setText").value = "";
     }
 
     const withdrawOwed = async (event) => {
@@ -307,70 +318,111 @@ const DividePaymentApp = () => {
 
 
 
-    return (<div>
-        <Button onClick={connectWalletHandler} variant="contained" color="primary">{connButtonText}</Button>
-        {/* <button onClick={testTransactionFilled}>Test Transaction Filled</button> */}
+    return (
 
-        {
-            defaultAccount ? (
-                <div>
-                    <Box>
-                        <h3>Address: {defaultAccount}</h3>
-                        <h3>Wallet Balance: {walletBalance}</h3>
-                        <h3>Contract Balance: {contractBalance}</h3>
-                    </Box>
+        <div>
+            <Button onClick={connectWalletHandler} variant="contained" color="primary">{connButtonText}</Button>
+            {/* <button onClick={testTransactionFilled}>Test Transaction Filled</button> */}
 
-
-                    <Box>
-                        {
-                            inpaygroup ? (
-                                <Button onClick={withdrawOwed} variant="contained" color="primary">{processing ? <CircularProgress size={26} color="secondary" /> : "Withdraw Payment"}</Button>
-                            ) : (
-                                null
-                            )
-                        }
-                    </Box>
-
-                    <Box>
-                        {
-                            isAdmin ? (<>
-                                <h2>WELCOME ADMIN:</h2>
-                                <Button onClick={AdminDisbursePayments} variant="contained" color="primary">{processing ? <CircularProgress size={26} color="secondary" /> : "Disburse Payments To Payees"}</Button>
-                            </>
-
-                            ) : (
-                                null
-                            )
-                        }
-                    </Box>
-
-                    <Box>
-                        <h3>MAKE A DEPOSIT:</h3>
-                        <form onSubmit={setDeposit}>
-                            <Input id="setText" type="text" />
-                            <Button type={"submit"} variant="contained" color="info">  {processing ? <CircularProgress size={26} color="secondary" /> : "Send ETH To Contract"} </Button>
-                        </form>
-
-                    </Box>
-
-
-
-
-
-
-                </div>
-            ) :
-                (
+            {
+                defaultAccount ? (
                     <div>
-                        {errorMessage}
+                        <Box>
+                            <h3>Address: {defaultAccount}</h3>
+                            <h3>Wallet Balance: {walletBalance}</h3>
+                            <h3>Contract Balance: {contractBalance}</h3>
+                        </Box>
+
+
+
+
+                        <Box>
+                            {
+                                inpaygroup ? (
+                                    <Button onClick={withdrawOwed} variant="contained" color="secondary">{processing ? <CircularProgress size={26} color="error" /> : "Withdraw Payment"}</Button>
+                                ) : (
+                                    null
+                                )
+                            }
+                        </Box>
+
+                        <Box>
+                            {
+                                isAdmin ? (<>
+                                    <h2>WELCOME ADMIN:</h2>
+                                    <Button onClick={AdminDisbursePayments} variant="contained" color="error">{processing ? <CircularProgress size={26} color="secondary" /> : "Disburse Payments To Payees"}</Button>
+                                </>
+
+                                ) : (
+                                    null
+                                )
+                            }
+                        </Box>
+
+                        <Box>
+
+
+
+                            <form onSubmit={setDeposit}>
+                                <div>
+                                    {
+                                        processing ? (
+                                            null
+                                        ) :
+                                            (
+                                                <>
+                                                    <h3>MAKE A DEPOSIT:</h3>
+                                                    <Box p={3}>
+                                                        <TextField id="setText" label="ETH:" variant="filled" ></TextField>
+                                                    </Box>
+
+                                                    <div>
+                                                        <Button type={"submit"} variant="contained" color="success">  {processing ? <CircularProgress size={26} color="secondary" /> : "Send ETH To Contract"} </Button>
+                                                    </div>
+
+                                                </>
+
+                                            )
+                                    }
+
+                                </div>
+
+                            </form>
+
+                            <Snackbar open={transactionPosted} autoHideDuration={8000} onClose={handleCloseSnack}>
+                                <Alert onClose={handleCloseSnack} severity="success">
+                                    <Link target="_blank" rel="noopener noreferrer" href={`https://kovan.etherscan.io/tx/${txhash}`}> Transaction Complete: RECEIPT </Link>
+                                </Alert>
+                            </Snackbar>
+
+                        </Box>
+
+
+
+
+
+
                     </div>
-                )
-        }
+                ) :
+                    (
+                        <div>
+                            {errorMessage}
+                        </div>
+                    )
 
 
 
 
-    </div>)
+
+
+            }
+
+
+
+
+        </div>
+
+    )
 
 };
 
