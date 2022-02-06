@@ -1,1 +1,0 @@
-{"dependencies": ["OpenZeppelin/openzeppelin-contracts@4.4.2"], "compiler": {"solc": {"remappings": ["@openzeppelin=OpenZeppelin/openzeppelin-contracts@4.4.2"]}}, "dotenv": ".env", "networks": {"development": {"verify": false}, "ganache": {"verify": false}, "rinkeby": {"verify": true}, "kovan": {"verify": true}}, "wallets": {"from_key": "${PRIVATE_KEY}"}}
