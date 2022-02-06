@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ethers, constants, utils } from 'ethers'
 import DividePayment from "../chain-info/contracts/DividePayment.json"
 import networkMapping from "../chain-info/deployments/map.json"
-
+import { Button, Input, CircularProgress, Box } from "@mui/material"
 
 const DividePaymentApp = () => {
     const [errorMessage, setErrorMessage] = useState(null);
@@ -21,6 +21,7 @@ const DividePaymentApp = () => {
     const [contract, setContract] = useState(null);
     const [accountchanging, setAccountChanging] = useState(false)
     const [txstatus, setTxStatus] = useState(null)
+    const [processing, setProcessing] = useState(false)
 
     const [txhash, setTxHash] = useState(null)
 
@@ -170,6 +171,7 @@ const DividePaymentApp = () => {
 
 
             if (tx && tx.blockNumber) {
+                setProcessing(false)
                 console.log("block number assigned.")
                 transactionBlockFound = true
                 setTxStatus("complete")
@@ -197,6 +199,7 @@ const DividePaymentApp = () => {
 
     const setDeposit = async (event) => {
         event.preventDefault();
+        setProcessing(true)
         const amountwei = ethers.utils.parseEther(event.target.setText.value)
         console.log('sending ' + amountwei + ' to the contract');
         // contract.deposit({ "value": event.target.setText.value })
@@ -206,7 +209,9 @@ const DividePaymentApp = () => {
             setTxHash(hashin.toString())
             isTransactionMined(hashin.toString())
 
-        })
+        }).catch(error =>
+            setProcessing(false))
+
         if (txhash !== null) {
             setTxStatus(tx)
             console.log(tx)
@@ -220,13 +225,16 @@ const DividePaymentApp = () => {
 
     const withdrawOwed = async (event) => {
         event.preventDefault()
+        setProcessing(true)
         const tx = contract.releaseOwedPayment().then((txObj) => {
             console.log('txHash', txObj.hash)
             let hashin = txObj.hash
             setTxHash(hashin.toString())
             isTransactionMined(hashin.toString())
 
-        })
+        }).catch(error =>
+            setProcessing(false))
+
         if (txhash !== null) {
             setTxStatus(tx)
             console.log(tx)
@@ -236,6 +244,7 @@ const DividePaymentApp = () => {
 
     const AdminDisbursePayments = async (event) => {
         event.preventDefault()
+        setProcessing(true)
         const tx = await contract.AdminReleaseAllPayments().then((res) => {
             console.log(res)
             console.log(res.hash)
@@ -244,7 +253,9 @@ const DividePaymentApp = () => {
             setTxHash(hashin.toString())
             isTransactionMined(hashin.toString())
 
-        })
+        }).catch(error =>
+            setProcessing(false))
+
         if (txhash !== null) {
             setTxStatus(tx)
             console.log(tx)
@@ -297,44 +308,52 @@ const DividePaymentApp = () => {
 
 
     return (<div>
-        <button onClick={connectWalletHandler}>{connButtonText}</button>
+        <Button onClick={connectWalletHandler} variant="contained" color="primary">{connButtonText}</Button>
         {/* <button onClick={testTransactionFilled}>Test Transaction Filled</button> */}
 
         {
             defaultAccount ? (
                 <div>
-                    <h3>Address: {defaultAccount}</h3>
-                    <h3>Wallet Balance: {walletBalance}</h3>
-                    <h3>Contract Balance: {contractBalance}</h3>
+                    <Box>
+                        <h3>Address: {defaultAccount}</h3>
+                        <h3>Wallet Balance: {walletBalance}</h3>
+                        <h3>Contract Balance: {contractBalance}</h3>
+                    </Box>
 
-                    <div>
+
+                    <Box>
                         {
                             inpaygroup ? (
-                                <button onClick={withdrawOwed}>Withdraw Payment Into Account</button>
+                                <Button onClick={withdrawOwed} variant="contained" color="primary">{processing ? <CircularProgress size={26} color="secondary" /> : "Withdraw Payment"}</Button>
                             ) : (
                                 null
                             )
                         }
-                    </div>
+                    </Box>
 
-                    <div>
+                    <Box>
                         {
                             isAdmin ? (<>
                                 <h2>WELCOME ADMIN:</h2>
-                                <button onClick={AdminDisbursePayments}>Disburse Payments to Payees</button>
+                                <Button onClick={AdminDisbursePayments} variant="contained" color="primary">{processing ? <CircularProgress size={26} color="secondary" /> : "Disburse Payments To Payees"}</Button>
                             </>
 
                             ) : (
                                 null
                             )
                         }
-                    </div>
+                    </Box>
 
-                    <h3>MAKE A DEPOSIT:</h3>
-                    <form onSubmit={setDeposit}>
-                        <input id="setText" type="text" />
-                        <button type={"submit"}> Send ETH to DividePayment_Contract </button>
-                    </form>
+                    <Box>
+                        <h3>MAKE A DEPOSIT:</h3>
+                        <form onSubmit={setDeposit}>
+                            <Input id="setText" type="text" />
+                            <Button type={"submit"} variant="contained" color="info">  {processing ? <CircularProgress size={26} color="secondary" /> : "Send ETH To Contract"} </Button>
+                        </form>
+
+                    </Box>
+
+
 
 
 
@@ -343,13 +362,7 @@ const DividePaymentApp = () => {
             ) :
                 (
                     <div>
-
-
-
-
-
-
-
+                        {errorMessage}
                     </div>
                 )
         }
